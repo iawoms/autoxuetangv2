@@ -39,4 +39,28 @@ public class RobUtils {
                 .header("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8") ;
         return req;
     }
+    public static HttpRequest.Builder genAppjsonPost(String uri, String body) {
+        HttpRequest.Builder req = HttpRequest.newBuilder()
+                .uri(URI.create(uri))
+                .header("User-Agent", AGENT)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body));
+        return req;
+    }
+    public static HttpRequest.Builder genTextjsonPost(String uri, String body) {
+        HttpRequest.Builder req = HttpRequest.newBuilder()
+                .uri(URI.create(uri))
+                .header("User-Agent", AGENT)
+                .header("Content-Type", "text/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body));
+        return req;
+    }
+    public static String cutStr(String str ,String pre,String efe){
+        int idx = str.indexOf(pre);
+        if(idx >= 0){
+            str = str.substring(idx + pre.length());
+            return str.substring(0,str.indexOf(efe));
+        }
+        return null;
+    }
 }

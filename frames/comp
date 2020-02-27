@@ -1,0 +1,56 @@
+https://linewelle-learning.yunxuetang.cn/kng/plan/package/6c694efff54e439d9364950782466487_699e727586724cecbceb1cd5022c9e98.html?uniqueid=637183953868730807
+https://linewelle-learning.yunxuetang.cn/kng/plan/plan/package/6c694efff54e439d9364950782466487_699e727586724cecbceb1cd5022c9e98.html
+/plan/package/6c694efff54e439d9364950782466487_699e727586724cecbceb1cd5022c9e98.html
+
+
+:authority: linewelle-learning.yunxuetang.cn
+:method: POST
+:path: /kng/services/KngComService.svc/GetEncryptRequest
+:scheme: https
+accept: application/json, text/javascript, */*; q=0.01
+accept-encoding: gzip, deflate, br
+accept-language: zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7,ja;q=0.6,es;q=0.5,fr;q=0.4,la;q=0.3,vi;q=0.2,th;q=0.1,de;q=0.1,nl;q=0.1,it;q=0.1,gl;q=0.1,cy;q=0.1,mt;q=0.1,da;q=0.1,pt;q=0.1,fa;q=0.1,ru;q=0.1
+content-length: 369
+content-type: text/json
+cookie: route=1b74219b21c56905b38767617d3ebc55; TY_SESSION_ID=0030e658-f5c7-48d2-95d4-7c6f0c92a374; COOKIE_LANGAGES=zh; ELEARNING_00999=53vxxhth5mtk1yvhphrn43hi; ELEARNING_00008=19487217-a3dc-4d1d-99e4-4b3e064d90cc; route=8aa5fd5d524f615f67f8bf627a88f35d; XXTOWN_COOKIE_00018=b4d2fb83-62f1-4378-89cb-d2ff06e77562; ELEARNING_00003=StudyMenuGroup; ELEARNING_00006=C34DA76DB78887C5EE2C3AD43D8F8EB3D9FF596207C238293F1F754F34C8E6BFF2E5A697F24C6EE8E94CFBF4A1187379922CBAC02BAD9FB3D1216506CE64A9E92C271E96F74E642696873D68309F28279D8D109A5D20DFA4D1BB805C7006AA732B35FE60F3CCDC1D6083136EE09A9CF51E87C3C30350B91BD5C076D0E39E14CB48E7B75A157AB635DC598CDB67FE7473848BBA9103C45901E6E0EB57083D5C120216394A99984E30DF922A1A7585FB9FB3F15B3C3B275E8A48B90B5B; ELEARNING_00018=kEWTaJi27uTd9D18eKs0p3r0wttrrjdOxE4OF7fb1Ty96kghA398uwl756t0lv6QByUfl71oQk8kDH5Pko3mOB7+DSPvodhfuo84gCNz9TIn0nvf13fQ4v+b/u0/5azcKEv02/SxHIMYbuGb1j8KqsKBqQSSjjd9dJ64KsVguuRFLirK39MPh4EzXn5XMBF8P/Ja2r5RvpSqSwBZLNaERXMGd94drO1MuZRZjGeUEhU=; ELEARNING_00024=ucloud--cluster--AAAAAGpZogbmdQKQXcv1K54b3xz2WGhsSZlk407bEs4zmleYp3woXbdAo8q3-xlYIxMPNOb1k765ZIjsfKeXCaROFf9xMjXTzlqhqh64T43b8SY3hlIJVvoDwvNYiMO5Vn8uZbmlHDKruQBz3ffX_IFeVPo
+origin: https://linewelle-learning.yunxuetang.cn
+referer: https://linewelle-learning.yunxuetang.cn/kng/course/package/ebook/8fbac16704f5460881af2e2f79f0648b_2fedb53090c24268bad8bba85c031a1e.html?MasterID=6c694eff-f54e-439d-9364-950782466487&MasterType=Plan&taskId=null&st=null&objectId=null&uniqueid=1582770672177&uniqueid=637183962697783846
+user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36
+x-requested-with: XMLHttpRequest
+x-tingyun-id: _hoVbWfXnGI;r=770705243
+
+{
+    "knowledgeId":"2fedb530-90c2-4268-bad8-bba85c031a1e",
+    "masterId":"6c694eff-f54e-439d-9364-950782466487",
+    "masterType":"Plan",
+    "packageId":"8fbac167-04f5-4608-81af-2e2f79f0648b",
+    "pageSize":1,
+    "studySize":1,
+    "studyTime":120,
+    "type":0,
+    "offLine":false,
+    "end":true,
+    "care":true,
+    "deviceId":"",
+    "studyChapterIds":"",
+    "viewSchedule":0
+}
+
+{
+	"knowledgeId": "2fedb530-90c2-4268-bad8-bba85c031a1e",
+	"masterId": "6c694eff-f54e-439d-9364-950782466487",
+	"masterType": "Plan",
+	"packageId": "8fbac167-04f5-4608-81af-2e2f79f0648b",
+	"pageSize": 1,
+	"studySize": 1,
+	"studyTime": 120,
+	"type": 0,
+	"offLine": false,
+	"end": true,
+	"care": true,
+	"deviceId": "",
+	"studyChapterIds": "",
+	"viewSchedule": 0
+}
+ucloud--cluster--AAAAAGpZogbmdQKQXcv1K54b3xz2WGhsSZlk407bEs4zmleYp3woXbdAo8q3-xlYIxMPNOb1k765ZIjsfKeXCaROFf9xMjXTzlqhqh64T43b8SY3hlIJVvoDwvNYiMO5Vn8uZbmlHDKruQBz3ffX_IFeVPo
+<input name="hidIndexPage" type="hidden" id="hidIndexPage" value="https%3a%2f%2fm2.yunxuetang.cn%2fy%2fapps%2fplay%2f%23%2f178f0614-4eec-4972-8550-51c9a79d908d%3ftoken%3ducloud--cluster--AAAAAGpZogbmdQKQXcv1K54b3xz2WGhsSZlk407bEs4zmleYp3woXbdAo8q3-xlYIxMPNOb1k765ZIjsfKeXCaROFf9xMjXTzlqhqh64T43b8SY3hlIJVvoDwvNYiMO5Vn8uZbmlHDKruQBz3ffX_IFeVPo%26productid%3d50%26marquee%3d%e6%b4%aa%e7%81%bf%e6%a6%95(hcanrong)+%e5%a4%a7%e6%95%b0%e6%8d%ae%e7%a0%94%e5%8f%91%e4%b8%ad%e5%bf%83+%e5%8d%97%e5%a8%81%e8%bd%af%e4%bb%b6%e5%ad%a6%e4%b9%a0%e5%b9%b3%e5%8f%b0%26fontfamily%3d%26fontsize%3d%26color%3d%26show%3d%26order%3d7975687867" />
