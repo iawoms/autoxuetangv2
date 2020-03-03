@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 import static web.WebServer.indexPage;
 import static web.ws.model.MsgType.AUTH_FAILED;
@@ -16,6 +17,8 @@ import static web.ws.model.MsgType.REDIRECT;
 public class Login extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        String json = StringUtils.toEncodedString(req.getInputStream().readAllBytes(), Charset.forName("UTF-8"));
+        System.out.println(json);
         String usr = req.getParameter("usr");
         String pwd = req.getParameter("pwd");
         resp.setContentType("application/json;charset=utf-8");

@@ -20,37 +20,37 @@ x-requested-with: XMLHttpRequest
 x-tingyun-id: _hoVbWfXnGI;r=770705243
 
 {
+    "care":true,
+    "deviceId":"",
+    "end":true,
     "knowledgeId":"2fedb530-90c2-4268-bad8-bba85c031a1e",
     "masterId":"6c694eff-f54e-439d-9364-950782466487",
     "masterType":"Plan",
+    "offLine":false,
     "packageId":"8fbac167-04f5-4608-81af-2e2f79f0648b",
     "pageSize":1,
+    "studyChapterIds":"",
     "studySize":1,
     "studyTime":120,
     "type":0,
-    "offLine":false,
-    "end":true,
-    "care":true,
-    "deviceId":"",
-    "studyChapterIds":"",
     "viewSchedule":0
 }
 
 {
-	"knowledgeId": "2fedb530-90c2-4268-bad8-bba85c031a1e",
-	"masterId": "6c694eff-f54e-439d-9364-950782466487",
-	"masterType": "Plan",
-	"packageId": "8fbac167-04f5-4608-81af-2e2f79f0648b",
-	"pageSize": 1,
-	"studySize": 1,
-	"studyTime": 120,
-	"type": 0,
-	"offLine": false,
-	"end": true,
-	"care": true,
-	"deviceId": "",
-	"studyChapterIds": "",
-	"viewSchedule": 0
+    "care":true,
+    "deviceId":"",
+    "end":false,
+    "knowledgeId":"7de82f67-f421-4f7f-9089-f629be0e0619",
+    "masterId":"af826ba1-f06b-48e5-b27d-e87c636317fa",
+    "masterType":"Plan",
+    "offLine":false,
+    "packageId":"",
+    "pageSize":1,
+    "studyChapterIds":"",
+    "studySize":1,
+    "studyTime":120,
+    "type":0,
+    "viewSchedule":13.941232
 }
 ucloud--cluster--AAAAAGpZogbmdQKQXcv1K54b3xz2WGhsSZlk407bEs4zmleYp3woXbdAo8q3-xlYIxMPNOb1k765ZIjsfKeXCaROFf9xMjXTzlqhqh64T43b8SY3hlIJVvoDwvNYiMO5Vn8uZbmlHDKruQBz3ffX_IFeVPo
 <input name="hidIndexPage" type="hidden" id="hidIndexPage" value="https%3a%2f%2fm2.yunxuetang.cn%2fy%2fapps%2fplay%2f%23%2f178f0614-4eec-4972-8550-51c9a79d908d%3ftoken%3ducloud--cluster--AAAAAGpZogbmdQKQXcv1K54b3xz2WGhsSZlk407bEs4zmleYp3woXbdAo8q3-xlYIxMPNOb1k765ZIjsfKeXCaROFf9xMjXTzlqhqh64T43b8SY3hlIJVvoDwvNYiMO5Vn8uZbmlHDKruQBz3ffX_IFeVPo%26productid%3d50%26marquee%3d%e6%b4%aa%e7%81%bf%e6%a6%95(hcanrong)+%e5%a4%a7%e6%95%b0%e6%8d%ae%e7%a0%94%e5%8f%91%e4%b8%ad%e5%bf%83+%e5%8d%97%e5%a8%81%e8%bd%af%e4%bb%b6%e5%ad%a6%e4%b9%a0%e5%b9%b3%e5%8f%b0%26fontfamily%3d%26fontsize%3d%26color%3d%26show%3d%26order%3d7975687867" />

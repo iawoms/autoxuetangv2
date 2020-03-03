@@ -42,8 +42,8 @@ public class RobUtils {
     public static HttpRequest.Builder genAppjsonPost(String uri, String body) {
         HttpRequest.Builder req = HttpRequest.newBuilder()
                 .uri(URI.create(uri))
-                .header("User-Agent", AGENT)
-                .header("Content-Type", "application/json")
+                .setHeader("User-Agent", AGENT)
+                .header("Content-Type", "application/json;charset=UTF-8")
                 .POST(HttpRequest.BodyPublishers.ofString(body));
         return req;
     }

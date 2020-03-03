@@ -1,19 +1,35 @@
 package model;
 
+import com.alibaba.fastjson.annotation.JSONField;
+
 public class SubmitStudy {
+    @JSONField(ordinal = 1)
     private String knowledgeId = "";
+    @JSONField(ordinal = 2)
     private String masterId = "";
+    @JSONField(ordinal = 3)
     private String masterType = "Plan";
+    @JSONField(ordinal = 4)
     private String packageId = "";
+    @JSONField(ordinal = 5)
     private int pageSize = 1;
+    @JSONField(ordinal = 6)
     private int studySize = 1;
+    @JSONField(ordinal = 7)
     private int studyTime = 120;
+    @JSONField(ordinal = 8)
     private int type = 0;
+    @JSONField(ordinal = 9)
     private boolean offLine = false;
+    @JSONField(ordinal = 10)
     private boolean end = true;
+    @JSONField(ordinal = 11)
     private boolean care = true;
+    @JSONField(ordinal = 12)
     private String deviceId = "";
+    @JSONField(ordinal = 13)
     private String studyChapterIds = "";
+    @JSONField(ordinal = 14)
     private int viewSchedule = 0;
 
     public String getKnowledgeId() {

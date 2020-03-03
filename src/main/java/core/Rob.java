@@ -174,19 +174,21 @@ public class Rob {
         List<LWTask> list = new ArrayList<>();
         Document doc = Jsoup.parse(body);
         Element course = doc.getElementById("divcourselist");
-        Elements links = course.getElementsByTag("a");
-        for (Element ln : links) {
-            System.out.println(ln.attr("title"));
-            LWTask task = new LWTask();
-            task.setTitle(ln.attr("title"));
-            String path = ln.attr("href");
+        if (course != null) {
+            Elements links = course.getElementsByTag("a");
+            for (Element ln : links) {
+                System.out.println(ln.attr("title"));
+                LWTask task = new LWTask();
+                task.setTitle(ln.attr("title"));
+                String path = ln.attr("href");
 //            javascript:void(StudyRowClick('/package/ebook/8fbac16704f5460881af2e2f79f0648b_2fedb53090c24268bad8bba85c031a1e.html?MasterID=6c694eff-f54e-439d-9364-950782466487&MasterType=Plan','CourseKnowledge','','False', 'True','True',''));
-            task.setPath(RobUtils.cutStr(path, "StudyRowClick('", "?"));
-            task.setMasterID(RobUtils.cutStr(path, "MasterID=", "&"));
+                task.setPath(RobUtils.cutStr(path, "StudyRowClick('", "?"));
+                task.setMasterID(RobUtils.cutStr(path, "MasterID=", "&"));
 
-            openTaskPage(task);
-            learnTask(task);
-            list.add(task);
+                openTaskPage(task);
+                learnTask(task);
+                list.add(task);
+            }
         }
         return list;
     }
@@ -215,9 +217,9 @@ public class Rob {
 
     public String getEncrypt(LWTask task) throws Exception {
         String url = XUE_GETEYPT;
-        HttpRequest req = genTextjsonPost(url, task.studyJson)
+        HttpRequest req = genTextjsonPost(url, task.encJson)
                 .header("x-requested-with", "XMLHttpRequest")
-                .header("x-tingyun-id", "_hoVbWfXnGI;r=770705243")
+                .header("x-tingyun-id", "_hoVbWfXnGI;r=219510364")
                 .header("referer", task.referer)
                 .build();
         HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
@@ -236,7 +238,8 @@ public class Rob {
     public void learnTask(LWTask task) throws Exception {
         String encrypt = getEncrypt(task);
         String submiturl = XUE_SUBMIT + encrypt;
-        HttpRequest req = genAppjsonPost(submiturl, task.studyJson)
+        String js = task.studyJson;
+        HttpRequest req = genAppjsonPost(submiturl, js)
                 .header("token", task.token)
                 .header("referer", task.referer)
                 .header("Origin", "https://linewelle-learning.yunxuetang.cn")
@@ -258,8 +261,16 @@ public class Rob {
         }
     }
 
-    public static void main(String[] args) throws Exception {
+    public void test(LWTask task) throws IOException, InterruptedException {
+        String submiturl = "http://127.0.0.1:8080/login";
+        HttpRequest req = genAppjsonPost(submiturl, task.studyJson)
+                .build();
+        HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
+        String body = resp.body();
+        System.out.println(body);
+    }
 
+    public static void main(String[] args) throws Exception {
         Rob rob = new Rob("hcanrong", "123457");
         rob.runStudy();
     }
@@ -277,7 +288,7 @@ class SimpleRespHlr implements HttpResponse.BodyHandler<String> {
             List<String> loc = responseInfo.headers().allValues("location");
             return HttpResponse.BodySubscribers.replacing("code " + responseInfo.statusCode() + " location " + loc.get(0));
         } else {
-            return HttpResponse.BodySubscribers.replacing("ERROR " + responseInfo.statusCode());
+            return HttpResponse.BodySubscribers.ofString(UTF_8);
         }
     }
 }
