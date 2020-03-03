@@ -73,7 +73,10 @@
         }
 
         .btn:hover {
-            background-color: #2980B9;
+            background-color: #1d92a9;
+        }
+        .btn:disabled {
+            background-color: rgba(8, 46, 53, 0.47);
         }
     </style>
     <script src="js/socket.js"></script>
@@ -97,12 +100,12 @@
                 <input type="password" class="login-field" value="" placeholder="pwd" id="pwd">
                 <label class="login-field-icon fui-lock" for="pwd"></label>
             </div>
-            <a id="btn_login" class="btn btn-primary btn-large btn-block" href="#">login</a>
+            <button id="btn_login" class="btn btn-primary btn-large btn-block" >start</button>
         </div>
     </div>
 </div>
 <div align="center">
-    <textarea id="ta_msg" rows="5" cols="30" readonly
+    <textarea id="ta_msg" rows="7" cols="30" readonly
               style="width: 600px;background: #0f3b46;color: #e3e3e3; border-width: 0px;resize: none"></textarea>
 </div>
 <script>
@@ -118,7 +121,14 @@
             var resObj = $.parseJSON(event.data);
             switch (resObj.msgType) {
                 case "REQ_AUTH": {
+                    $("#btn_login").attr("disabled","disabled");
                     $("#ta_msg").append(resObj.content + "\n");
+                    $("#btn_login").text("----");
+                }
+                    break;
+                case "TASKFINISH": {
+                    $("#btn_login").removeAttr("disabled");
+                    $("#btn_login").text("start");
                 }
                     break;
 

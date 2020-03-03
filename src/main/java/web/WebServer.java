@@ -8,17 +8,15 @@ import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import web.svlt.Login;
-import web.svlt.RabList;
-import web.svlt.SockGroup;
 import web.ws.WsServlet;
 
 public class WebServer {
 
-    public static String indexPage = "/pages/index.html";
+    public static String indexPage = "/index.html";
 
     public static void main(String[] args) throws Exception {
 
-        Server server = new Server(8080);
+        Server server = new Server(808);
         ResourceHandler resource_handler = new ResourceHandler();
         resource_handler.setDirectoriesListed(true);
         resource_handler.setWelcomeFiles(new String[]{indexPage});
@@ -29,9 +27,7 @@ public class WebServer {
         SessionHandler sesHdr = new SessionHandler();
         sesHdr.setMaxInactiveInterval(60 * 20);
         handler.setSessionHandler(sesHdr);
-        handler.addServlet(RabList.class, "/rablist");
         handler.addServlet(Login.class, "/login");
-        handler.addServlet(SockGroup.class, "/sockgroup");
         handler.addServlet(WsServlet.class, "/ws");
 
         HandlerList handlers = new HandlerList();

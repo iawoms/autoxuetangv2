@@ -14,7 +14,6 @@ public enum MsgType {
     RABPAGE,
     LOGIN,
     REDIRECT,
-    BUYINGLOG,
-    BUYINGSTATUS
+    TASKFINISH
 
 }

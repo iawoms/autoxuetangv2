@@ -65,6 +65,11 @@ public class Rob {
                 public void sendLog(Object msg) {
                     System.out.println(msg);
                 }
+
+                @Override
+                public void finish() {
+
+                }
             };
         }else {
             this.logHandle = logHandle;
@@ -77,7 +82,6 @@ public class Rob {
     }
 
     public void close() {
-
     }
 
 
@@ -270,7 +274,7 @@ public class Rob {
                 .build();
         HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
         String body = resp.body();
-        logHandle.sendLog(body);
+        logHandle.sendLog(resp.statusCode() + " " + body);
     }
 
     public void runStudy()  {
@@ -288,6 +292,8 @@ public class Rob {
             logHandle.sendLog(e.getMessage());
         } finally {
             close();
+            logHandle.sendLog("all done .");
+            logHandle.finish();
         }
     }
 

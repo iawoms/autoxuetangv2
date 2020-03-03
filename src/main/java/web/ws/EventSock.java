@@ -60,6 +60,11 @@ public class EventSock extends WebSocketAdapter {
                     public void sendLog(Object msg) {
                         sendMsg(getRemote(),new SockMsg(MsgType.REQ_AUTH,msg.toString()));
                     }
+
+                    @Override
+                    public void finish() {
+                        sendMsg(getRemote(),new SockMsg(MsgType.TASKFINISH));
+                    }
                 });
                 rob.runStudy();
             }
