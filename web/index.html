@@ -7,15 +7,18 @@
         *:focus {
             outline: none;
         }
+
         body {
             font-family: Arial;
             background-color: #0f3b46;
             padding: 50px;
         }
+
         .login {
             margin: 20px auto;
             width: 400px;
         }
+
         .login-screen {
             background-color: #FFF;
             padding: 20px;
@@ -30,6 +33,7 @@
         .login-form {
             text-align: center;
         }
+
         .control-group {
             margin-bottom: 10px;
         }
@@ -72,6 +76,9 @@
             background-color: #2980B9;
         }
     </style>
+    <script src="js/socket.js"></script>
+    <script src="js/jquery.min.js"></script>
+
 </head>
 <body>
 <div class="login">
@@ -82,20 +89,48 @@
 
         <div class="login-form">
             <div class="control-group">
-                <input type="text" class="login-field" value="" placeholder="mss" id="login-name">
-                <label class="login-field-icon fui-user" for="login-name"></label>
+                <input type="text" class="login-field" value="" placeholder="mss" id="usr">
+                <label class="login-field-icon fui-user" for="usr"></label>
             </div>
 
             <div class="control-group">
-                <input type="password" class="login-field" value="" placeholder="pwd" id="login-pass">
-                <label class="login-field-icon fui-lock" for="login-pass"></label>
+                <input type="password" class="login-field" value="" placeholder="pwd" id="pwd">
+                <label class="login-field-icon fui-lock" for="pwd"></label>
             </div>
-
-            <a class="btn btn-primary btn-large btn-block" href="#">login</a>
+            <a id="btn_login" class="btn btn-primary btn-large btn-block" href="#">login</a>
         </div>
     </div>
 </div>
 <div align="center">
-<textarea rows="3" cols="30"  style="width: 600px;background: #0f3b46; border-width: 0px;resize: none"  ></textarea>
+    <textarea id="ta_msg" rows="5" cols="30" readonly
+              style="width: 600px;background: #0f3b46;color: #e3e3e3; border-width: 0px;resize: none"></textarea>
 </div>
+<script>
+    $(function () {
+
+        socket.onopen = function (event) {
+        };
+        socket.onclose = function (event) {
+        };
+
+        socket.onmessage = function (event) {
+            // console.log(event.data);
+            var resObj = $.parseJSON(event.data);
+            switch (resObj.msgType) {
+                case "REQ_AUTH": {
+                    $("#ta_msg").append(resObj.content + "\n");
+                }
+                    break;
+
+            }
+            document.getElementById("ta_msg").scrollTop = document.getElementById("ta_msg").scrollHeight
+
+        };
+        $("#btn_login").click(function () {
+            var co = {usr: $("#usr").val(), pwd: $("#pwd").val()};
+            send(JSON.stringify({msgType: "REQ_AUTH", content: JSON.stringify(co)}));
+        });
+    });
+</script>
+
 </body>

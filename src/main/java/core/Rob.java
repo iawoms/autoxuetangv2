@@ -45,20 +45,35 @@ public class Rob {
     WebSocket webSocket;
     CookieManager cookieManager = new CookieManager();
 
-    String usr;
-    String pwd;
-    String sessionid;
-    String xue_session_loginurl;
+    private String usr;
+    private  String pwd;
+    private String sessionid;
+    private String xue_session_loginurl;
     LWUser lwUser;
     List<LWPlan> planList = new ArrayList<>();
+    LogHandle logHandle;
 
-    public Rob(String usr, String pwd) {
+    public Rob(String usr, String pwd){
+      this(usr,pwd,null);
+    }
+    public Rob(String usr, String pwd,LogHandle logHandle) {
         this.usr = usr;
         this.pwd = pwd;
+        if(logHandle == null){
+            this.logHandle = new LogHandle() {
+                @Override
+                public void sendLog(Object msg) {
+                    System.out.println(msg);
+                }
+            };
+        }else {
+            this.logHandle = logHandle;
+        }
         client = HttpClient.newBuilder()
                 .cookieHandler(cookieManager)
                 .connectTimeout(Duration.ofSeconds(120))
                 .build();
+
     }
 
     public void close() {
@@ -67,12 +82,12 @@ public class Rob {
 
 
     public void login_lbsp() throws Exception {
+        logHandle.sendLog("login to mss ..");
         LbspLogin lbsp = new LbspLogin();
         lbsp.userName = usr;
         lbsp.password = DigestUtils.md5Hex(pwd);
         HttpRequest req = genPost(LW_LOGIN_URL, RobUtils.genPostBody(lbsp)).build();
         HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
-        System.out.println(resp.body());
         JSONObject datamap = JSON.parseObject(resp.body());
         String errorMsg = datamap.getString("errorMsg");
         if (StringUtils.isNotEmpty(errorMsg)) {
@@ -80,17 +95,17 @@ public class Rob {
         } else {
             JSONObject session = datamap.getJSONObject("session");
             sessionid = session.get("sessionId").toString();
-            System.out.println("sessionid : " + sessionid);
+            logHandle.sendLog("sessionid : " + sessionid);
         }
     }
 
     public void singleLogin() throws Exception {
+        logHandle.sendLog("load xue url ...");
         String payLoadLogin = "{\"userUnid\":\"" + sessionid + "\"}";
         HttpRequest req = RobUtils.genPost(LW_SINGLE_LOGIN_URL, payLoadLogin)
                 .setHeader("Content-type", "application/json;charset=UTF-8")
                 .build();
         HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
-        System.out.println(resp.body());
         JSONObject datamap = JSON.parseObject(resp.body());
         JSONObject result = datamap.getJSONObject("result");
         String xueurl = result.getString("data");
@@ -98,16 +113,17 @@ public class Rob {
     }
 
     public void loginToXueTang() throws Exception {
+        logHandle.sendLog("jumping to xuetang");
         HttpRequest req = genGet(xue_session_loginurl).build();
         HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
-        System.out.println(resp.body());
+        logHandle.sendLog(resp.statusCode());
     }
 
     public void loadUserInfo() throws Exception {
         HttpRequest req = genGet(XUE_STY).build();
         HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
         String body = resp.body();
-        System.out.println(body);
+//        logHandle.sendLog(body);
         ByteArrayInputStream is = new ByteArrayInputStream(body.getBytes());
         BufferedReader br = new BufferedReader(new InputStreamReader(is));
         String line;
@@ -116,10 +132,11 @@ public class Rob {
                 lwUser = new LWUser(line);
             }
         }
-        System.out.println(lwUser);
+        logHandle.sendLog(lwUser);
     }
 
     public void loadStudyPlan() throws Exception {
+        logHandle.sendLog("loading my plan..");
         HttpRequest req = genGet(XUE_MYSTUDYTASK).build();
         HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
         String data = resp.body();
@@ -135,6 +152,7 @@ public class Rob {
                 Elements ellipsises = li.getElementsByClass("ellipsis");
                 for (Element ellipsise : ellipsises) {
                     plan.setName(ellipsise.text());
+                    logHandle.sendLog(plan.getName());
                 }
                 planList.add(plan);
             }
@@ -142,11 +160,11 @@ public class Rob {
     }
 
     public void loadPlanTask(LWPlan plan) throws Exception {
+        logHandle.sendLog("loading my tasks ...");
         String url = DOMAIN + plan.getUrl();
         HttpRequest req = genGet(url).build();
         HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
         String body = resp.body();
-//        System.out.println(body);
         Document doc = Jsoup.parse(body);
         Elements tbs = doc.getElementsByClass("table1");
         for (Element tb : tbs) {
@@ -155,11 +173,10 @@ public class Rob {
                 String onclick = tr.attr("onclick");
                 if (StringUtils.isNotEmpty(onclick)) {
                     Element span = tr.getElementsByTag("span").get(3);
-                    System.out.println(span.attr("title"));
-
+                    logHandle.sendLog(span.attr("title"));
 //                    return StudyRowClick('/plan/package/6c694efff54e439d9364950782466487_699e727586724cecbceb1cd5022c9e98.html','CourseKnowledge','','False', 'False','False','False',0,1,'','acc78727-26f4-48cb-8a7f-f64e7c486918','6a45330b-ba38-479a-bbd2-d826a624d02e');
                     String taskurl = RobUtils.cutStr(onclick, "StudyRowClick('", "','");
-                    System.out.println(taskurl);
+                    logHandle.sendLog(taskurl);
                     explanTask(taskurl);
                 }
             }
@@ -167,6 +184,7 @@ public class Rob {
     }
 
     public List<LWTask> explanTask(String taskurl) throws Exception {
+        logHandle.sendLog("check next level ...");
         String url = DOMAIN + "kng" + taskurl;
         HttpRequest req = genGet(url).build();
         HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
@@ -177,14 +195,13 @@ public class Rob {
         if (course != null) {
             Elements links = course.getElementsByTag("a");
             for (Element ln : links) {
-                System.out.println(ln.attr("title"));
+                logHandle.sendLog(ln.attr("title"));
                 LWTask task = new LWTask();
                 task.setTitle(ln.attr("title"));
                 String path = ln.attr("href");
 //            javascript:void(StudyRowClick('/package/ebook/8fbac16704f5460881af2e2f79f0648b_2fedb53090c24268bad8bba85c031a1e.html?MasterID=6c694eff-f54e-439d-9364-950782466487&MasterType=Plan','CourseKnowledge','','False', 'True','True',''));
                 task.setPath(RobUtils.cutStr(path, "StudyRowClick('", "?"));
                 task.setMasterID(RobUtils.cutStr(path, "MasterID=", "&"));
-
                 openTaskPage(task);
                 learnTask(task);
                 list.add(task);
@@ -194,28 +211,34 @@ public class Rob {
     }
 
     public void openTaskPage(LWTask task) throws IOException, InterruptedException {
+        logHandle.sendLog("openning task page ...");
         String url = DOMAIN + "kng/course" + task.getPath();
         HttpRequest req = genGet(url).build();
         HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
         String body = resp.body();
         Document doc = Jsoup.parse(body);
+        logHandle.sendLog("loading knid ...");
         Element selected = doc.getElementsByClass("active select").get(0);
         String knid = selected.id();
         task.setKnowledgeID(knid);
+        logHandle.sendLog("loading packid ...");
         Element liFavorite = doc.getElementById("liFavorite");
         Element span = liFavorite.getElementsByTag("span").get(0);
         String idstr = RobUtils.cutStr(span.attr("onclick"), "CheckAddToFavorite(", ");");
         String[] ids = idstr.split(",");
         task.setPackageId(ids[3].replace("'", ""));
         task.referer = url + "?MasterID=" + task.getMasterID() + "&MasterType=Plan";
+        logHandle.sendLog("loading token ...");
         Element tokeninput = doc.getElementById("hidIndexPage");
         String tokenstr = tokeninput.val();
         String token = RobUtils.cutStr(tokenstr, "token%3d", "%26productid");
         task.token = token;
+        logHandle.sendLog("gen enc json ...");
         task.genStudyJson();
     }
 
     public String getEncrypt(LWTask task) throws Exception {
+        logHandle.sendLog("loading enc ...");
         String url = XUE_GETEYPT;
         HttpRequest req = genTextjsonPost(url, task.encJson)
                 .header("x-requested-with", "XMLHttpRequest")
@@ -227,7 +250,7 @@ public class Rob {
         if (body.startsWith("\"") && body.endsWith("\"")) {
             body = body.substring(1, body.length() - 1);
         }
-        System.out.println(body);
+        logHandle.sendLog(body);
         JSONObject jo = JSON.parseObject(body);
         if (StringUtils.equalsIgnoreCase(jo.get("Status").toString(), "OK")) {
             return jo.get("Data").toString();
@@ -236,6 +259,7 @@ public class Rob {
     }
 
     public void learnTask(LWTask task) throws Exception {
+        logHandle.sendLog("active task .");
         String encrypt = getEncrypt(task);
         String submiturl = XUE_SUBMIT + encrypt;
         String js = task.studyJson;
@@ -246,28 +270,25 @@ public class Rob {
                 .build();
         HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
         String body = resp.body();
-        System.out.println(body);
+        logHandle.sendLog(body);
     }
 
-    public void runStudy() throws Exception {
-        login_lbsp();
-        singleLogin();
-        loginToXueTang();
-        loadUserInfo();
-        loadStudyPlan();
-        System.out.println(planList.size());
-        for (LWPlan plan : planList) {
-            loadPlanTask(plan);
+    public void runStudy()  {
+        try {
+            login_lbsp();
+            singleLogin();
+            loginToXueTang();
+            loadUserInfo();
+            loadStudyPlan();
+            for (LWPlan plan : planList) {
+                loadPlanTask(plan);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            logHandle.sendLog(e.getMessage());
+        } finally {
+            close();
         }
-    }
-
-    public void test(LWTask task) throws IOException, InterruptedException {
-        String submiturl = "http://127.0.0.1:8080/login";
-        HttpRequest req = genAppjsonPost(submiturl, task.studyJson)
-                .build();
-        HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
-        String body = resp.body();
-        System.out.println(body);
     }
 
     public static void main(String[] args) throws Exception {

@@ -1,6 +1,9 @@
 package web.ws;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import core.LogHandle;
+import core.Rob;
 import org.eclipse.jetty.websocket.api.RemoteEndpoint;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.WebSocketAdapter;
@@ -13,29 +16,13 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class EventSock extends WebSocketAdapter {
-    private static ConcurrentHashMap<String, ConcurrentHashMap<String, WebSocketAdapter>> wsClients = new ConcurrentHashMap();
 
-    public static void brodcast(SockMsg msg) {
-        for (String s : wsClients.keySet()) {
-            sendToUser(s, msg);
-        }
-    }
-
-    public static void sendToUser(String usr, SockMsg msg) {
-        ConcurrentHashMap<String, WebSocketAdapter> clis = wsClients.get(usr);
-        if (clis != null) {
-            for (WebSocketAdapter v : clis.values()) {
-                sendMsg(v.getRemote(), msg);
-            }
-        }
-    }
 
     public static void sendMsg(RemoteEndpoint endpoint, SockMsg msg) {
         try {
             endpoint.sendString(JSON.toJSONString(msg), new WriteCallback() {
                 @Override
                 public void writeFailed(Throwable x) {
-
                     System.out.println("writefailed");
                 }
 
@@ -49,12 +36,10 @@ public class EventSock extends WebSocketAdapter {
         }
     }
 
-    public String id;
 
     @Override
     public void onWebSocketConnect(Session sess) {
         super.onWebSocketConnect(sess);
-        id = UUID.randomUUID().toString().replace("-", "");
         System.out.println("Socket Connected: " + sess);
     }
 
@@ -66,14 +51,17 @@ public class EventSock extends WebSocketAdapter {
             case BACKERROR:
                 break;
             case REQ_AUTH: {
-//                user = JSON.parseObject(msg.getContent().toString(), User.class);
-//                String usrid = user.getUsr();
-//                ConcurrentHashMap<String, WebSocketAdapter> userClents = wsClients.get(usrid);
-//                if (userClents == null) {
-//                    userClents = new ConcurrentHashMap<>();
-//                    wsClients.put(usrid, userClents);
-//                }
-//                userClents.put(id, this);
+                sendMsg(getSession().getRemote(),new SockMsg(MsgType.REQ_AUTH,"init connection ."));
+                String json = msg.getContent().toString();
+                System.out.println(json);
+                JSONObject jo = JSON.parseObject(json);
+                Rob rob = new Rob(jo.get("usr").toString(), jo.get("pwd").toString(), new LogHandle() {
+                    @Override
+                    public void sendLog(Object msg) {
+                        sendMsg(getRemote(),new SockMsg(MsgType.REQ_AUTH,msg.toString()));
+                    }
+                });
+                rob.runStudy();
             }
             break;
             case REQ_COOKIE:
