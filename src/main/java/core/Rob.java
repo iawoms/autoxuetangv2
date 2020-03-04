@@ -42,7 +42,6 @@ public class Rob {
     public static String XUE_SUBMIT = "https://api-qidatestin.yunxuetang.cn/v1/study/submit?encryption=";
 
     HttpClient client;
-    WebSocket webSocket;
     CookieManager cookieManager = new CookieManager();
 
     private String usr;
@@ -190,16 +189,11 @@ public class Rob {
                     String taskurl = RobUtils.cutStr(onclick, "StudyRowClick('", "','");
                     logHandle.sendLog(taskurl);
                     List<LWTask> tasks = explanTask(taskurl);
-                    if (tasks.size() > 0) {
-                        for (LWTask task : tasks) {
-                            learnTask(task);
-                        }
-                    } else {
+                    if (tasks.size() == 0) {
                         LWTask task = new LWTask();
                         task.setTitle(title);
                         task.setPath("kng" + taskurl);
                         openTaskPage(task);
-                        learnTask(task);
                     }
                 }
             }
@@ -223,7 +217,7 @@ public class Rob {
                 task.setTitle(ln.attr("title"));
                 String path = ln.attr("href");
 //            javascript:void(StudyRowClick('/package/ebook/8fbac16704f5460881af2e2f79f0648b_2fedb53090c24268bad8bba85c031a1e.html?MasterID=6c694eff-f54e-439d-9364-950782466487&MasterType=Plan','CourseKnowledge','','False', 'True','True',''));
-                task.setPath("kng/course" + RobUtils.cutStr(path, "StudyRowClick('", "?"));
+                task.setPath("kng/course" + RobUtils.cutStr(path, "StudyRowClick('", "','"));
 //                task.setMasterID(RobUtils.cutStr(path, "MasterID=", "&"));
                 openTaskPage(task);
                 list.add(task);
@@ -232,7 +226,7 @@ public class Rob {
         return list;
     }
 
-    public void openTaskPage(LWTask task) throws IOException, InterruptedException {
+    public void openTaskPage(LWTask task) throws Exception {
         logHandle.sendLog("openning task page ...");
         String url = DOMAIN + task.getPath();
         HttpRequest req = genGet(url).build();
@@ -266,6 +260,7 @@ public class Rob {
 
         logHandle.sendLog("gen enc json ...");
         task.genStudyJson();
+        learnTask(task);
     }
 
     public String getEncrypt(LWTask task) throws Exception {
@@ -325,7 +320,7 @@ public class Rob {
     }
 
     public static void main(String[] args) throws Exception {
-        Rob rob = new Rob("lhanquan", "a2583796qq");
+        Rob rob = new Rob("hyubao", "hyb@2018");
         rob.runStudy();
     }
 
