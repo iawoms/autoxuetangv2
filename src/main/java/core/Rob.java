@@ -46,20 +46,21 @@ public class Rob {
     CookieManager cookieManager = new CookieManager();
 
     private String usr;
-    private  String pwd;
+    private String pwd;
     private String sessionid;
     private String xue_session_loginurl;
     LWUser lwUser;
     List<LWPlan> planList = new ArrayList<>();
     LogHandle logHandle;
 
-    public Rob(String usr, String pwd){
-      this(usr,pwd,null);
+    public Rob(String usr, String pwd) {
+        this(usr, pwd, null);
     }
-    public Rob(String usr, String pwd,LogHandle logHandle) {
+
+    public Rob(String usr, String pwd, LogHandle logHandle) {
         this.usr = usr;
         this.pwd = pwd;
-        if(logHandle == null){
+        if (logHandle == null) {
             this.logHandle = new LogHandle() {
                 @Override
                 public void sendLog(Object msg) {
@@ -71,7 +72,7 @@ public class Rob {
 
                 }
             };
-        }else {
+        } else {
             this.logHandle = logHandle;
         }
         client = HttpClient.newBuilder()
@@ -129,12 +130,18 @@ public class Rob {
         String body = resp.body();
 //        logHandle.sendLog(body);
         ByteArrayInputStream is = new ByteArrayInputStream(body.getBytes());
-        BufferedReader br = new BufferedReader(new InputStreamReader(is));
-        String line;
-        while ((line = br.readLine()) != null) {
-            if (line.contains("var arr = '{\"orgID\"")) {
-                lwUser = new LWUser(line);
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(is));
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (line.contains("var arr = '{\"orgID\"")) {
+                    lwUser = new LWUser(line);
+                }
             }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            is.close();
         }
         logHandle.sendLog(lwUser);
     }
@@ -177,11 +184,23 @@ public class Rob {
                 String onclick = tr.attr("onclick");
                 if (StringUtils.isNotEmpty(onclick)) {
                     Element span = tr.getElementsByTag("span").get(3);
-                    logHandle.sendLog(span.attr("title"));
+                    String title = span.attr("title");
+                    logHandle.sendLog(title);
 //                    return StudyRowClick('/plan/package/6c694efff54e439d9364950782466487_699e727586724cecbceb1cd5022c9e98.html','CourseKnowledge','','False', 'False','False','False',0,1,'','acc78727-26f4-48cb-8a7f-f64e7c486918','6a45330b-ba38-479a-bbd2-d826a624d02e');
                     String taskurl = RobUtils.cutStr(onclick, "StudyRowClick('", "','");
                     logHandle.sendLog(taskurl);
-                    explanTask(taskurl);
+                    List<LWTask> tasks = explanTask(taskurl);
+                    if (tasks.size() > 0) {
+                        for (LWTask task : tasks) {
+                            learnTask(task);
+                        }
+                    } else {
+                        LWTask task = new LWTask();
+                        task.setTitle(title);
+                        task.setPath("kng" + taskurl);
+                        openTaskPage(task);
+                        learnTask(task);
+                    }
                 }
             }
         }
@@ -204,10 +223,9 @@ public class Rob {
                 task.setTitle(ln.attr("title"));
                 String path = ln.attr("href");
 //            javascript:void(StudyRowClick('/package/ebook/8fbac16704f5460881af2e2f79f0648b_2fedb53090c24268bad8bba85c031a1e.html?MasterID=6c694eff-f54e-439d-9364-950782466487&MasterType=Plan','CourseKnowledge','','False', 'True','True',''));
-                task.setPath(RobUtils.cutStr(path, "StudyRowClick('", "?"));
-                task.setMasterID(RobUtils.cutStr(path, "MasterID=", "&"));
+                task.setPath("kng/course" + RobUtils.cutStr(path, "StudyRowClick('", "?"));
+//                task.setMasterID(RobUtils.cutStr(path, "MasterID=", "&"));
                 openTaskPage(task);
-                learnTask(task);
                 list.add(task);
             }
         }
@@ -216,27 +234,36 @@ public class Rob {
 
     public void openTaskPage(LWTask task) throws IOException, InterruptedException {
         logHandle.sendLog("openning task page ...");
-        String url = DOMAIN + "kng/course" + task.getPath();
+        String url = DOMAIN + task.getPath();
         HttpRequest req = genGet(url).build();
         HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
         String body = resp.body();
         Document doc = Jsoup.parse(body);
-        logHandle.sendLog("loading knid ...");
-        Element selected = doc.getElementsByClass("active select").get(0);
-        String knid = selected.id();
-        task.setKnowledgeID(knid);
+//        logHandle.sendLog("loading knid ...");
+//        Element selected = doc.getElementsByClass("active select").get(0);
+//        String knid = selected.id();
+//        task.setKnowledgeID(knid);
         logHandle.sendLog("loading packid ...");
         Element liFavorite = doc.getElementById("liFavorite");
         Element span = liFavorite.getElementsByTag("span").get(0);
         String idstr = RobUtils.cutStr(span.attr("onclick"), "CheckAddToFavorite(", ");");
         String[] ids = idstr.split(",");
+        task.setKnowledgeID(ids[2].replace("'", ""));
         task.setPackageId(ids[3].replace("'", ""));
+        task.setMasterID(ids[4].replace("'", ""));
         task.referer = url + "?MasterID=" + task.getMasterID() + "&MasterType=Plan";
         logHandle.sendLog("loading token ...");
         Element tokeninput = doc.getElementById("hidIndexPage");
-        String tokenstr = tokeninput.val();
-        String token = RobUtils.cutStr(tokenstr, "token%3d", "%26productid");
-        task.token = token;
+        if(tokeninput == null){
+            String tokenstr = RobUtils.findLine(body,"token:");
+            String token = RobUtils.cutStr(tokenstr,"token: '","',");
+            task.token = token;
+        }else {
+            String tokenstr = tokeninput.val();
+            String token = RobUtils.cutStr(tokenstr, "token%3d", "%26productid");
+            task.token = token;
+        }
+
         logHandle.sendLog("gen enc json ...");
         task.genStudyJson();
     }
@@ -277,7 +304,7 @@ public class Rob {
         logHandle.sendLog(resp.statusCode() + " " + body);
     }
 
-    public void runStudy()  {
+    public void runStudy() {
         try {
             login_lbsp();
             singleLogin();
@@ -298,7 +325,7 @@ public class Rob {
     }
 
     public static void main(String[] args) throws Exception {
-        Rob rob = new Rob("hcanrong", "123457");
+        Rob rob = new Rob("lhanquan", "a2583796qq");
         rob.runStudy();
     }
 

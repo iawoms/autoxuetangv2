@@ -1,7 +1,12 @@
 package tool;
 
+import model.LWUser;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.http.HttpRequest;
@@ -54,6 +59,27 @@ public class RobUtils {
                 .header("Content-Type", "text/json")
                 .POST(HttpRequest.BodyPublishers.ofString(body));
         return req;
+    }
+    public static String findLine(String body,String key){
+        ByteArrayInputStream is = new ByteArrayInputStream(body.getBytes());
+        try {
+            BufferedReader br = new BufferedReader(new InputStreamReader(is));
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (StringUtils.containsIgnoreCase(line,key)) {
+                    return line;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
     public static String cutStr(String str ,String pre,String efe){
         int idx = str.indexOf(pre);
