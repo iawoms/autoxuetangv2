@@ -247,6 +247,10 @@ public class Rob {
 //        task.setKnowledgeID(knid);
         logHandle.sendLog("loading packid ...");
         Element liFavorite = doc.getElementById("liFavorite");
+        if(liFavorite == null){
+            logHandle.sendLog(task.getTitle() + " load faild ! skip ...");
+            return;
+        }
         Element span = liFavorite.getElementsByTag("span").get(0);
         String idstr = RobUtils.cutStr(span.attr("onclick"), "CheckAddToFavorite(", ");");
         String[] ids = idstr.split(",");
