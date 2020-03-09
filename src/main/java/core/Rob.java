@@ -22,7 +22,6 @@ import java.net.CookieManager;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.net.http.WebSocket;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +47,7 @@ public class Rob {
     private String pwd;
     private String sessionid;
     private String xue_session_loginurl;
+    private String shareToken;
     LWUser lwUser;
     List<LWPlan> planList = new ArrayList<>();
     LogHandle logHandle;
@@ -186,14 +186,22 @@ public class Rob {
                     String title = span.attr("title");
                     logHandle.sendLog(title);
 //                    return StudyRowClick('/plan/package/6c694efff54e439d9364950782466487_699e727586724cecbceb1cd5022c9e98.html','CourseKnowledge','','False', 'False','False','False',0,1,'','acc78727-26f4-48cb-8a7f-f64e7c486918','6a45330b-ba38-479a-bbd2-d826a624d02e');
-                    String taskurl = RobUtils.cutStr(onclick, "StudyRowClick('", "','");
-                    logHandle.sendLog(taskurl);
-                    List<LWTask> tasks = explanTask(taskurl);
-                    if (tasks.size() == 0) {
-                        LWTask task = new LWTask();
-                        task.setTitle(title);
-                        task.setPath("kng" + taskurl);
-                        openTaskPage(task);
+//                    String taskurl = RobUtils.cutStr(onclick, "StudyRowClick('", "','");
+                    String clpath = RobUtils.cutStr(onclick, "StudyRowClick('", ")");
+                    String[] clps = clpath.split("','");
+                    String taskurl =  clps[0];
+                    String taskType = clps[1];
+                    if(taskType.equalsIgnoreCase("DocumentKnowledge")){
+                        logHandle.sendLog("Doc knowledge not sported : [" + title + "]");
+                    }else {
+                        logHandle.sendLog(taskurl);
+                        List<LWTask> tasks = explanTask(taskurl);
+                        if (tasks.size() == 0) {
+                            LWTask task = new LWTask();
+                            task.setTitle(title);
+                            task.setPath("kng" + taskurl);
+                            openTaskPage(task);
+                        }
                     }
                 }
             }
@@ -218,7 +226,7 @@ public class Rob {
                 String path = ln.attr("href");
 //            javascript:void(StudyRowClick('/package/ebook/8fbac16704f5460881af2e2f79f0648b_2fedb53090c24268bad8bba85c031a1e.html?MasterID=6c694eff-f54e-439d-9364-950782466487&MasterType=Plan','CourseKnowledge','','False', 'True','True',''));
                 task.setPath("kng/course" + RobUtils.cutStr(path, "StudyRowClick('", "','"));
-//                task.setMasterID(RobUtils.cutStr(path, "MasterID=", "&"));
+                task.setMasterID(RobUtils.cutStr(path, "MasterID=", "&"));
                 openTaskPage(task);
                 list.add(task);
             }
@@ -239,6 +247,10 @@ public class Rob {
 //        task.setKnowledgeID(knid);
         logHandle.sendLog("loading packid ...");
         Element liFavorite = doc.getElementById("liFavorite");
+        if(liFavorite == null){
+            logHandle.sendLog(task.getTitle() + " load faild ! skip ...");
+            return;
+        }
         Element span = liFavorite.getElementsByTag("span").get(0);
         String idstr = RobUtils.cutStr(span.attr("onclick"), "CheckAddToFavorite(", ");");
         String[] ids = idstr.split(",");
@@ -248,11 +260,11 @@ public class Rob {
         task.referer = url + "?MasterID=" + task.getMasterID() + "&MasterType=Plan";
         logHandle.sendLog("loading token ...");
         Element tokeninput = doc.getElementById("hidIndexPage");
-        if(tokeninput == null){
-            String tokenstr = RobUtils.findLine(body,"token:");
-            String token = RobUtils.cutStr(tokenstr,"token: '","',");
+        if (tokeninput == null) {
+            String tokenstr = RobUtils.findLine(body, "token:");
+            String token = RobUtils.cutStr(tokenstr, "token: '", "',");
             task.token = token;
-        }else {
+        } else {
             String tokenstr = tokeninput.val();
             String token = RobUtils.cutStr(tokenstr, "token%3d", "%26productid");
             task.token = token;
@@ -320,7 +332,7 @@ public class Rob {
     }
 
     public static void main(String[] args) throws Exception {
-        Rob rob = new Rob("hyubao", "hyb@2018");
+        Rob rob = new Rob("lshule", "linewell@2018");
         rob.runStudy();
     }
 
