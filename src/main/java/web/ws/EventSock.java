@@ -28,7 +28,7 @@ public class EventSock extends WebSocketAdapter {
 
                 @Override
                 public void writeSuccess() {
-                    System.out.println("writesuess");
+//                    System.out.println("writesuess");
                 }
             });
         } catch (Exception e) {
@@ -59,6 +59,7 @@ public class EventSock extends WebSocketAdapter {
                     @Override
                     public void sendLog(Object msg) {
                         sendMsg(getRemote(),new SockMsg(MsgType.REQ_AUTH,msg.toString()));
+                        System.out.println(msg);
                     }
 
                     @Override
