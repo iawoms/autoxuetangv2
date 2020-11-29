@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import core.LogHandle;
 import core.Rob;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.websocket.api.RemoteEndpoint;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.WebSocketAdapter;
@@ -58,7 +59,7 @@ public class EventSock extends WebSocketAdapter {
                 Rob rob = new Rob(jo.get("usr").toString(), jo.get("pwd").toString(), new LogHandle() {
                     @Override
                     public void sendLog(Object msg) {
-                        sendMsg(getRemote(),new SockMsg(MsgType.REQ_AUTH,msg.toString()));
+                        sendMsg(getRemote(),new SockMsg(MsgType.REQ_AUTH, msg));
                         System.out.println(msg);
                     }
 

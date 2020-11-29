@@ -30,8 +30,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static tool.RobUtils.*;
 
 public class Rob {
-    public static String LW_LOGIN_URL = "http://mss.linewell.com/lbsp/login.action";
-    public static String LW_SINGLE_LOGIN_URL = "http://mss.linewell.com/lbsp/BaseAction.action?type=yunXueTang&act=single_sign_on";
+//    public static String LW_DOMAIN = "http://59.61.216.122";
+    public static String LW_DOMAIN = "http://mss.linewell.com";
+    public static String LW_LOGIN_URL = LW_DOMAIN + "/lbsp/login.action";
+    public static String LW_SINGLE_LOGIN_URL = LW_DOMAIN + "/lbsp/BaseAction.action?type=yunXueTang&act=single_sign_on";
 
     public static String DOMAIN = "https://linewelle-learning.yunxuetang.cn/";
     public static String XUE_STY = DOMAIN + "sty/index.htm";
@@ -121,6 +123,7 @@ public class Rob {
         HttpRequest req = genGet(xue_session_loginurl).build();
         HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
         logHandle.sendLog(resp.statusCode());
+        logHandle.sendLog(resp.body());
     }
 
     public void loadUserInfo() throws Exception {
