@@ -262,7 +262,8 @@ public class Rob {
         Element tokeninput = doc.getElementById("hidIndexPage");
         if (tokeninput == null) {
             String tokenstr = RobUtils.findLine(body, "token:");
-            String token = RobUtils.cutStr(tokenstr, "token: '", "',");
+            String token = RobUtils.cutStr(tokenstr, "token: '", "'");
+            System.out.println("token : " + token);
             task.token = token;
         } else {
             String tokenstr = tokeninput.val();
@@ -332,7 +333,7 @@ public class Rob {
     }
 
     public static void main(String[] args) throws Exception {
-        Rob rob = new Rob("lshule", "linewell@2018");
+        Rob rob = new Rob("hcanrong", "Fuck4linewell");
         rob.runStudy();
     }
 
