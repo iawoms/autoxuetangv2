@@ -2,10 +2,8 @@ package core;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import model.LWPlan;
-import model.LWTask;
-import model.LWUser;
-import model.LbspLogin;
+import com.alibaba.fastjson.serializer.SerializerFeature;
+import model.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
@@ -30,7 +28,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static tool.RobUtils.*;
 
 public class Rob {
-//    public static String LW_DOMAIN = "http://59.61.216.122";
+    //    public static String LW_DOMAIN = "http://59.61.216.122";
     public static String LW_DOMAIN = "http://mss.linewell.com";
     public static String LW_LOGIN_URL = LW_DOMAIN + "/lbsp/login.action";
     public static String LW_SINGLE_LOGIN_URL = LW_DOMAIN + "/lbsp/BaseAction.action?type=yunXueTang&act=single_sign_on";
@@ -41,6 +39,12 @@ public class Rob {
     public static String XUE_MYPLANS = DOMAIN + "Services/MyIndexService.svc/GetTaskCenterPersonalStudyPlan";
     public static String XUE_GETEYPT = DOMAIN + "kng/services/KngComService.svc/GetEncryptRequest";
     public static String XUE_SUBMIT = "https://api-qidatestin.yunxuetang.cn/v1/study/submit?encryption=";
+    public static String XUE_EXAMPREV = DOMAIN + "exam/exampreview.htm?";
+    public static String XUE_EXAM = DOMAIN + "exam/test/userexam.htm?";
+    public static String examId_fix = "${ExamID}";
+    public static String arrangeId_fix = "${arrangeId}";
+    public static String EXAM_ANSWER = "https://api-qidatestin.yunxuetang.cn/v1/ote/web/userexam/" + examId_fix + "/answer?" + "arrangeId="+arrangeId_fix;
+
 
     HttpClient client;
     CookieManager cookieManager = new CookieManager();
@@ -192,17 +196,17 @@ public class Rob {
 //                    String taskurl = RobUtils.cutStr(onclick, "StudyRowClick('", "','");
                     String clpath = RobUtils.cutStr(onclick, "StudyRowClick('", ")");
                     String[] clps = clpath.split("','");
-                    String taskurl =  clps[0];
+                    String taskurl = clps[0];
                     String taskType = clps[1];
-                    if(taskType.equalsIgnoreCase("DocumentKnowledge")){
+                    if (taskType.equalsIgnoreCase("DocumentKnowledge")) {
                         logHandle.sendLog("Doc knowledge not sported : [" + title + "]");
-                    }else {
+                    } else {
                         logHandle.sendLog(taskurl);
                         List<LWTask> tasks = explanTask(taskurl);
                         if (tasks.size() == 0) {
                             LWTask task = new LWTask();
-                            task.setTitle(title);
-                            task.setPath("kng" + taskurl);
+                            task.title = title;
+                            task.path = "kng" + taskurl;
                             openTaskPage(task);
                         }
                     }
@@ -221,15 +225,19 @@ public class Rob {
         Document doc = Jsoup.parse(body);
         Element course = doc.getElementById("divcourselist");
         if (course != null) {
+
             Elements links = course.getElementsByTag("a");
             for (Element ln : links) {
                 logHandle.sendLog(ln.attr("title"));
                 LWTask task = new LWTask();
-                task.setTitle(ln.attr("title"));
+                task.title = ln.attr("title");
                 String path = ln.attr("href");
+                String[] parms = path.split(",");
+                task.taskType = parms[1].replace("'", "");
 //            javascript:void(StudyRowClick('/package/ebook/8fbac16704f5460881af2e2f79f0648b_2fedb53090c24268bad8bba85c031a1e.html?MasterID=6c694eff-f54e-439d-9364-950782466487&MasterType=Plan','CourseKnowledge','','False', 'True','True',''));
-                task.setPath("kng/course" + RobUtils.cutStr(path, "StudyRowClick('", "','"));
-                task.setMasterID(RobUtils.cutStr(path, "MasterID=", "&"));
+//                javascript:void(StudyRowClick('/exam/exampreview.htm?examarrangeid=60d334d8-9a62-4203-9479-e0dcf86ef20e&packageid=06cd4c95-f9d6-42d9-952e-516189f10537&MasterID=2a3f217b-4fa1-43d0-924a-88a482f9de3c&MasterType=PlanStudy','OteExam','Evaluating','True', 'True','True'));
+                task.path = "kng/course" + RobUtils.cutStr(path, "StudyRowClick('", "','");
+                task.masterID = RobUtils.cutStr(path, "MasterID=", "&");
                 openTaskPage(task);
                 list.add(task);
             }
@@ -238,45 +246,118 @@ public class Rob {
     }
 
     public void openTaskPage(LWTask task) throws Exception {
-        logHandle.sendLog("openning task page ...");
-        String url = DOMAIN + task.getPath();
-        HttpRequest req = genGet(url).build();
-        HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
-        String body = resp.body();
-        Document doc = Jsoup.parse(body);
+        if (task.taskType.equalsIgnoreCase("OteExam")) {
+            LWExam exam = RobUtils.parseByUrl(task.path, LWExam.class);
+            doTask(exam);
+        } else {
+            logHandle.sendLog("openning task page ...");
+            String url = DOMAIN + task.path;
+            HttpRequest req = genGet(url).build();
+            HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
+            String body = resp.body();
+            Document doc = Jsoup.parse(body);
 //        logHandle.sendLog("loading knid ...");
 //        Element selected = doc.getElementsByClass("active select").get(0);
 //        String knid = selected.id();
 //        task.setKnowledgeID(knid);
-        logHandle.sendLog("loading packid ...");
-        Element liFavorite = doc.getElementById("liFavorite");
-        if(liFavorite == null){
-            logHandle.sendLog(task.getTitle() + " load faild ! skip ...");
-            return;
+            logHandle.sendLog("loading packid ...");
+            Element liFavorite = doc.getElementById("liFavorite");
+            if (liFavorite == null) {
+                logHandle.sendLog(task.title + " load faild ! skip ...");
+                return;
+            }
+            Element span = liFavorite.getElementsByTag("span").get(0);
+            String idstr = RobUtils.cutStr(span.attr("onclick"), "CheckAddToFavorite(", ");");
+            String[] ids = idstr.split(",");
+            task.knowledgeID = ids[2].replace("'", "");
+            task.packageId = ids[3].replace("'", "");
+            task.masterID = ids[4].replace("'", "");
+            task.referer = url + "?MasterID=" + task.masterID + "&MasterType=Plan";
+            logHandle.sendLog("loading token ...");
+            Element tokeninput = doc.getElementById("hidIndexPage");
+            if (tokeninput == null) {
+                String tokenstr = RobUtils.findLine(body, "token:");
+                String token = RobUtils.cutStr(tokenstr, "token: '", "'");
+                System.out.println("token : " + token);
+                task.token = token;
+            } else {
+                String tokenstr = tokeninput.val();
+                String token = RobUtils.cutStr(tokenstr, "token%3d", "%26productid");
+                task.token = token;
+            }
+
+            logHandle.sendLog("gen enc json ...");
+            task.genStudyJson();
+            doTask(task);
         }
-        Element span = liFavorite.getElementsByTag("span").get(0);
-        String idstr = RobUtils.cutStr(span.attr("onclick"), "CheckAddToFavorite(", ");");
-        String[] ids = idstr.split(",");
-        task.setKnowledgeID(ids[2].replace("'", ""));
-        task.setPackageId(ids[3].replace("'", ""));
-        task.setMasterID(ids[4].replace("'", ""));
-        task.referer = url + "?MasterID=" + task.getMasterID() + "&MasterType=Plan";
-        logHandle.sendLog("loading token ...");
-        Element tokeninput = doc.getElementById("hidIndexPage");
-        if (tokeninput == null) {
-            String tokenstr = RobUtils.findLine(body, "token:");
-            String token = RobUtils.cutStr(tokenstr, "token: '", "'");
-            System.out.println("token : " + token);
-            task.token = token;
-        } else {
-            String tokenstr = tokeninput.val();
-            String token = RobUtils.cutStr(tokenstr, "token%3d", "%26productid");
-            task.token = token;
+    }
+
+    private void doTask(LWExam task) throws Exception {
+        logHandle.sendLog("loading exam page ...");
+        String url = XUE_EXAMPREV + RobUtils.genPostBody(task);
+        HttpRequest req = genGet(url).build();
+        HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
+        String body = resp.body();
+
+        Document doc = Jsoup.parse(body);
+        Element hidurl = doc.getElementById("hidExamUrl");
+        url = DOMAIN + hidurl.val();
+        LWExam nexam = RobUtils.parseByUrl(hidurl.val(), LWExam.class);
+        task.ExamID = nexam.ExamID;
+        task.UserExamMapID = nexam.UserExamMapID;
+        req = genGet(url).build();
+        resp = client.send(req, new SimpleRespHlr());
+        body = resp.body();
+        task.token = RobUtils.findToken(body);
+        doc = Jsoup.parse(body);
+        Element hidUserExamID = doc.getElementById("hidUserExamID");
+        task.UserExamID = hidUserExamID.val();
+        Elements quesList = doc.getElementsByClass("ques-list");
+        List<LiQuestion> questions = new ArrayList<>();
+        for (Element ques : quesList) {
+            Elements eliqs = ques.getElementsByAttributeValue("name", "li_Question");
+            for (Element eliq : eliqs) {
+                LiQuestion liq = new LiQuestion(eliq);
+                Elements liTexts = eliq.getElementsByClass("text-grey");
+                Elements inputs = eliq.getElementsByTag("input");
+                for (int i = 0; i < inputs.size(); i++) {
+                    Element input = inputs.get(i);
+                    LiAnswer lia = new LiAnswer(input);
+                    try {
+                        lia.text = liTexts.get(i).text();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    liq.addAnswer(lia);
+                }
+                questions.add(liq);
+            }
+        }
+        task.questions = questions;
+//        enableWaterMark();
+        answerQuestion(task);
+    }
+
+    private void answerQuestion(LWExam examAndQues) {
+
+        String url = EXAM_ANSWER.replace(examId_fix, examAndQues.UserExamID).replace(arrangeId_fix, examAndQues.ExamArrangeID);
+        for (LiQuestion liq : examAndQues.questions) {
+            try {
+                Answer ans = new Answer(liq);
+                ExamAnswerReq ereq = new ExamAnswerReq(ans);
+                String payLoad = JSON.toJSONString(ereq, SerializerFeature.WriteNullStringAsEmpty);
+                HttpRequest req = RobUtils.genAppjsonPost(url, payLoad)
+                        .header("Token", examAndQues.token)
+                        .build();
+
+                HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
+                String body = resp.body();
+                System.out.println(body);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
-        logHandle.sendLog("gen enc json ...");
-        task.genStudyJson();
-        learnTask(task);
     }
 
     public String getEncrypt(LWTask task) throws Exception {
@@ -300,7 +381,7 @@ public class Rob {
         throw new Exception("getEncrypt error : " + body);
     }
 
-    public void learnTask(LWTask task) throws Exception {
+    public void doTask(LWTask task) throws Exception {
         logHandle.sendLog("active task .");
         String encrypt = getEncrypt(task);
         String submiturl = XUE_SUBMIT + encrypt;
