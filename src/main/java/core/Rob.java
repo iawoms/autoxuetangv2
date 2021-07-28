@@ -125,7 +125,6 @@ public class Rob {
                 .cookieHandler(cookieManager)
                 .sslContext(sslContext)
                 .connectTimeout(Duration.ofSeconds(120))
-                .proxy(ProxySelector.of(new InetSocketAddress("127.0.0.1", 8888)))
                 .build();
 
     }
