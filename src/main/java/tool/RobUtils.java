@@ -1,5 +1,6 @@
 package tool;
 
+import com.alibaba.fastjson.annotation.JSONField;
 import model.LWUser;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
@@ -20,7 +21,10 @@ public class RobUtils {
         String bodyStr = "";
         for (Field f : fields) {
             Object val = f.get(body);
-            if (val != null) {
+            JSONField jsonan = f.getAnnotation( JSONField.class);
+            boolean b = !(jsonan != null && !jsonan.serialize());
+            System.out.println(f.getName() + jsonan + b);
+            if (val != null &&  !(jsonan != null && !jsonan.serialize())) {
                 if (StringUtils.isNotEmpty(bodyStr)) {
                     bodyStr += "&";
                 }
@@ -88,7 +92,7 @@ public class RobUtils {
     }
 
     public static HttpRequest.Builder genTextjsonPost(String uri, String body) {
-        HttpRequest.BodyPublisher bh = body == null ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofString(body);
+        HttpRequest.BodyPublisher bh = (body == null ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofString(body));
         HttpRequest.Builder req = HttpRequest.newBuilder()
                 .uri(URI.create(uri))
                 .header("User-Agent", AGENT)

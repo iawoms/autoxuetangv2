@@ -29,7 +29,6 @@ public class Answer {
         questionType = que.qt;
         attach = new String[0];
         lastSubmitTime = new Date();
-        answer = que.nextCombinAns();
     }
 
 }

@@ -25,7 +25,7 @@ public class LiQuestion {
         try {
             Elements rowdiv = eliq.getElementsByAttributeValue("class", "col-18 font-size-16");
             Elements divs = rowdiv.get(0).getElementsByTag("div");
-            text = divs.get(0).text();
+            text = divs.get(1).text().trim();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -39,6 +39,9 @@ public class LiQuestion {
         List<String> res = new ArrayList<>();
         res.add(answers.get(ansIdx).value);
         ansIdx++;
+        if(ansIdx >= answers.size()){
+            ansIdx = 0;
+        }
         return res;
     }
 }

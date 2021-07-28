@@ -6,23 +6,35 @@ import com.alibaba.fastjson.serializer.SerializerFeature;
 import model.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.text.StrBuilder;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import tool.RobUtils;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import javax.swing.*;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.CookieManager;
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static tool.RobUtils.*;
@@ -40,10 +52,13 @@ public class Rob {
     public static String XUE_GETEYPT = DOMAIN + "kng/services/KngComService.svc/GetEncryptRequest";
     public static String XUE_SUBMIT = "https://api-qidatestin.yunxuetang.cn/v1/study/submit?encryption=";
     public static String XUE_EXAMPREV = DOMAIN + "exam/exampreview.htm?";
-    public static String XUE_EXAM = DOMAIN + "exam/test/userexam.htm?";
+
+    public static String EXAM_CACHEANSWERS = DOMAIN + "exam/Services/StyService.svc/GetUserExamCacheAnswersOfList";
+    public static String EXAM_SUBMIT = DOMAIN + "exam/Services/StyService.svc/SubmitOrSaveUserExam";
     public static String examId_fix = "${ExamID}";
     public static String arrangeId_fix = "${arrangeId}";
-    public static String EXAM_ANSWER = "https://api-qidatestin.yunxuetang.cn/v1/ote/web/userexam/" + examId_fix + "/answer?" + "arrangeId="+arrangeId_fix;
+    public static String EXAM_ANSWER = "https://api-qidatestin.yunxuetang.cn/v1/ote/web/userexam/" + examId_fix + "/answer?" + "arrangeId=" + arrangeId_fix;
+    public static String EXAM_RESULT = DOMAIN + "exam/test/examquestionpreview.htm?userExamID=";
 
 
     HttpClient client;
@@ -57,6 +72,21 @@ public class Rob {
     LWUser lwUser;
     List<LWPlan> planList = new ArrayList<>();
     LogHandle logHandle;
+    private static TrustManager[] trustAllCerts = new TrustManager[]{
+            new X509TrustManager() {
+                public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                    return null;
+                }
+
+                public void checkClientTrusted(
+                        java.security.cert.X509Certificate[] certs, String authType) {
+                }
+
+                public void checkServerTrusted(
+                        java.security.cert.X509Certificate[] certs, String authType) {
+                }
+            }
+    };
 
     public Rob(String usr, String pwd) {
         this(usr, pwd, null);
@@ -80,9 +110,22 @@ public class Rob {
         } else {
             this.logHandle = logHandle;
         }
+
+        SSLContext sslContext = null;
+        try {
+            sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, trustAllCerts, new SecureRandom());
+
+        } catch (NoSuchAlgorithmException | KeyManagementException e) {
+            e.printStackTrace();
+        }
+
+
         client = HttpClient.newBuilder()
                 .cookieHandler(cookieManager)
+                .sslContext(sslContext)
                 .connectTimeout(Duration.ofSeconds(120))
+                .proxy(ProxySelector.of(new InetSocketAddress("127.0.0.1", 8888)))
                 .build();
 
     }
@@ -231,6 +274,9 @@ public class Rob {
                 logHandle.sendLog(ln.attr("title"));
                 LWTask task = new LWTask();
                 task.title = ln.attr("title");
+                if(StringUtils.isEmpty(task.title)){
+                    continue;
+                }
                 String path = ln.attr("href");
                 String[] parms = path.split(",");
                 task.taskType = parms[1].replace("'", "");
@@ -293,63 +339,70 @@ public class Rob {
     }
 
     private void doTask(LWExam task) throws Exception {
-        logHandle.sendLog("loading exam page ...");
-        String url = XUE_EXAMPREV + RobUtils.genPostBody(task);
-        HttpRequest req = genGet(url).build();
-        HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
-        String body = resp.body();
+        for (int ti = 0; ti < 5; ti++) {
+            logHandle.sendLog("loading exam page ... try + " + ti);
+            String url = XUE_EXAMPREV + RobUtils.genPostBody(task);
+            HttpRequest req = genGet(url).build();
+            HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
+            String body = resp.body();
+            Document doc = Jsoup.parse(body);
+            Element hidurl = doc.getElementById("hidExamUrl");
+            url = DOMAIN + hidurl.val();
+            task.submitReferer = url;
+            LWExam nexam = RobUtils.parseByUrl(hidurl.val(), LWExam.class);
+            task.ExamID = nexam.ExamID;
+            task.UserExamMapID = nexam.UserExamMapID;
+            req = genGet(url).build();
+            resp = client.send(req, new SimpleRespHlr());
+            body = resp.body();
+            task.token = RobUtils.findToken(body);
+            doc = Jsoup.parse(body);
+            Element hidUserExamID = doc.getElementById("hidUserExamID");
+            task.UserExamID = hidUserExamID.val();
+            Element hidUniqueId = doc.getElementById("hidUniqueId");
+            task.uniqueId = hidUniqueId.val();
 
-        Document doc = Jsoup.parse(body);
-        Element hidurl = doc.getElementById("hidExamUrl");
-        url = DOMAIN + hidurl.val();
-        LWExam nexam = RobUtils.parseByUrl(hidurl.val(), LWExam.class);
-        task.ExamID = nexam.ExamID;
-        task.UserExamMapID = nexam.UserExamMapID;
-        req = genGet(url).build();
-        resp = client.send(req, new SimpleRespHlr());
-        body = resp.body();
-        task.token = RobUtils.findToken(body);
-        doc = Jsoup.parse(body);
-        Element hidUserExamID = doc.getElementById("hidUserExamID");
-        task.UserExamID = hidUserExamID.val();
-        Elements quesList = doc.getElementsByClass("ques-list");
-        List<LiQuestion> questions = new ArrayList<>();
-        for (Element ques : quesList) {
-            Elements eliqs = ques.getElementsByAttributeValue("name", "li_Question");
-            for (Element eliq : eliqs) {
-                LiQuestion liq = new LiQuestion(eliq);
-                Elements liTexts = eliq.getElementsByClass("text-grey");
-                Elements inputs = eliq.getElementsByTag("input");
-                for (int i = 0; i < inputs.size(); i++) {
-                    Element input = inputs.get(i);
-                    LiAnswer lia = new LiAnswer(input);
-                    try {
-                        lia.text = liTexts.get(i).text();
-                    } catch (Exception e) {
-                        e.printStackTrace();
+            Elements quesList = doc.getElementsByClass("ques-list");
+            List<LiQuestion> questions = new ArrayList<>();
+            for (Element ques : quesList) {
+                Elements eliqs = ques.getElementsByAttributeValue("name", "li_Question");
+                for (Element eliq : eliqs) {
+                    LiQuestion liq = new LiQuestion(eliq);
+                    Elements liTexts = eliq.getElementsByClass("text-grey");
+                    Elements inputs = eliq.getElementsByTag("input");
+                    for (int i = 0; i < inputs.size(); i++) {
+                        Element input = inputs.get(i);
+                        LiAnswer lia = new LiAnswer(input);
+                        try {
+                            lia.text = liTexts.get(i).text().trim();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        liq.addAnswer(lia);
                     }
-                    liq.addAnswer(lia);
+                    questions.add(liq);
                 }
-                questions.add(liq);
+            }
+            task.questions = questions;
+            ExamResultPreview prev = answerQuestion(task);
+            if(prev.isPassed){
+                break;
             }
         }
-        task.questions = questions;
-//        enableWaterMark();
-        answerQuestion(task);
     }
 
-    private void answerQuestion(LWExam examAndQues) {
-
+    private ExamResultPreview answerQuestion(LWExam examAndQues) throws Exception {
         String url = EXAM_ANSWER.replace(examId_fix, examAndQues.UserExamID).replace(arrangeId_fix, examAndQues.ExamArrangeID);
         for (LiQuestion liq : examAndQues.questions) {
             try {
                 Answer ans = new Answer(liq);
+                ans.answer = examAndQues.genAnswer(liq);
+                logHandle.sendLog(liq.text );
                 ExamAnswerReq ereq = new ExamAnswerReq(ans);
                 String payLoad = JSON.toJSONString(ereq, SerializerFeature.WriteNullStringAsEmpty);
                 HttpRequest req = RobUtils.genAppjsonPost(url, payLoad)
                         .header("Token", examAndQues.token)
                         .build();
-
                 HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
                 String body = resp.body();
                 System.out.println(body);
@@ -357,7 +410,39 @@ public class Rob {
                 e.printStackTrace();
             }
         }
+        SubmitExam submit = new SubmitExam(examAndQues);
+        String payLoad = JSON.toJSONString(submit);
+        HttpRequest req = RobUtils.genTextjsonPost(EXAM_SUBMIT, payLoad)
+                .header("X-Requested-With", "XMLHttpRequest")
+                .header("Origin", "https://linewelle-learning.yunxuetang.cn")
+                .header("sec-ch-ua", "\"Chromium\";v=\"92\", \" Not A;Brand\";v=\"99\", \"Google Chrome\";v=\"92\"")
+                .header("Accept", "application/json, text/javascript, */*; q=0.01")
+                .header("Accept-Encoding", "gzip, deflate")
+                .header("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8,zh-TW;q=0.7,ja;q=0.6,es;q=0.5,fr;q=0.4,la;q=0.3,vi;q=0.2,th;q=0.1,de;q=0.1,nl;q=0.1,it;q=0.1,gl;q=0.1,cy;q=0.1,mt;q=0.1,da;q=0.1,pt;q=0.1,fa;q=0.1,ru;q=0.1")
+                .header("sec-ch-ua-mobile", "?0")
+                .header("Sec-Fetch-Dest", "empty")
+                .header("Sec-Fetch-Mode", "cors")
+                .header("Sec-Fetch-Site", "same-origin")
+                .header("Referer", examAndQues.submitReferer)
+                .build();
+        var resp = client.send(req, new SimpleRespHlr());
+        String body = resp.body();
+        System.out.println(body);
+        ExamResultPreview prev = loadExamResult(examAndQues.UserExamID);
+        logHandle.sendLog(prev);
+        examAndQues.resultPreview = prev;
+        return prev;
+    }
 
+    public ExamResultPreview loadExamResult(String userExamId) throws Exception {
+        logHandle.sendLog("loading exam result ...");
+        String url = EXAM_RESULT + userExamId;
+        HttpRequest req = genGet(url).build();
+        HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
+        String body = resp.body();
+        Document doc = Jsoup.parse(body);
+        ExamResultPreview prev = new ExamResultPreview(doc);
+        return prev;
     }
 
     public String getEncrypt(LWTask task) throws Exception {
@@ -418,7 +503,15 @@ public class Rob {
 
     public static void main(String[] args) throws Exception {
         Rob rob = new Rob("hcanrong", "Fuck4linewell");
+
         rob.runStudy();
+//
+//        rob.login_lbsp();
+//        rob.singleLogin();
+//        rob.loginToXueTang();
+//
+//        rob.loadExamResult("f45ec2b1-de28-4494-9ed6-d27f385e1767");
+
     }
 
 }
