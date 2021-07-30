@@ -18,14 +18,17 @@ public class LWTask {
     public String knowledgeID;
     public String packageId;
     public String studyJson;
+    public String studyChapterIds;
     public SubmitStudy study;
     public String encJson;
     public void genStudyJson() {
         study = new SubmitStudy();
-        study.setKnowledgeId(knowledgeID);
-        study.setMasterId(masterID);
-        study.setPackageId(packageId);
+        study.knowledgeId = knowledgeID;
+        study.masterId = masterID;
+        study.packageId = packageId;
+        study.studyChapterIds = studyChapterIds;
         studyJson = JSON.toJSONString(study);
+//        encJson = studyJson;
         Map<String,String> map = new HashMap<>();
         map.put("body",studyJson);
         encJson = JSON.toJSONString(map);

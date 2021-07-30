@@ -63,6 +63,7 @@ public class Rob {
 
     HttpClient client;
     CookieManager cookieManager = new CookieManager();
+    SSLContext sslContext = null;
 
     private String usr;
     private String pwd;
@@ -72,6 +73,7 @@ public class Rob {
     LWUser lwUser;
     List<LWPlan> planList = new ArrayList<>();
     LogHandle logHandle;
+
     private static TrustManager[] trustAllCerts = new TrustManager[]{
             new X509TrustManager() {
                 public java.security.cert.X509Certificate[] getAcceptedIssuers() {
@@ -111,7 +113,6 @@ public class Rob {
             this.logHandle = logHandle;
         }
 
-        SSLContext sslContext = null;
         try {
             sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null, trustAllCerts, new SecureRandom());
@@ -132,6 +133,18 @@ public class Rob {
     public void close() {
     }
 
+
+    public void resetClientLogin() throws Exception {
+        client = HttpClient.newBuilder()
+                .cookieHandler(cookieManager)
+                .sslContext(sslContext)
+                .connectTimeout(Duration.ofSeconds(120))
+                .build();
+        login_lbsp();
+        singleLogin();
+        loginToXueTang();
+        loadUserInfo();
+    }
 
     public void login_lbsp() throws Exception {
         logHandle.sendLog("login to mss ..");
@@ -273,7 +286,7 @@ public class Rob {
                 logHandle.sendLog(ln.attr("title"));
                 LWTask task = new LWTask();
                 task.title = ln.attr("title");
-                if(StringUtils.isEmpty(task.title)){
+                if (StringUtils.isEmpty(task.title)) {
                     continue;
                 }
                 String path = ln.attr("href");
@@ -319,6 +332,13 @@ public class Rob {
             task.masterID = ids[4].replace("'", "");
             task.referer = url + "?MasterID=" + task.masterID + "&MasterType=Plan";
             logHandle.sendLog("loading token ...");
+
+            Element divCourseTree = doc.getElementById("divCourseTree");
+            Elements ctreeA = divCourseTree.getElementsByTag("a");
+            if (ctreeA != null) {
+                DivCourseTree dct = RobUtils.parseByUrl(ctreeA.get(1).attr("href"), DivCourseTree.class);
+                task.studyChapterIds = dct.id;
+            }
             Element tokeninput = doc.getElementById("hidIndexPage");
             if (tokeninput == null) {
                 String tokenstr = RobUtils.findLine(body, "token:");
@@ -384,7 +404,7 @@ public class Rob {
             }
             task.questions = questions;
             ExamResultPreview prev = answerQuestion(task);
-            if(prev.isPassed){
+            if (prev.isPassed) {
                 break;
             }
         }
@@ -396,15 +416,25 @@ public class Rob {
             try {
                 Answer ans = new Answer(liq);
                 ans.answer = examAndQues.genAnswer(liq);
-                logHandle.sendLog(liq.text );
+                logHandle.sendLog(liq.text);
                 ExamAnswerReq ereq = new ExamAnswerReq(ans);
                 String payLoad = JSON.toJSONString(ereq, SerializerFeature.WriteNullStringAsEmpty);
                 HttpRequest req = RobUtils.genAppjsonPost(url, payLoad)
                         .header("Token", examAndQues.token)
                         .build();
-                HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
-                String body = resp.body();
-                System.out.println(body);
+                for (int i = 0; i < 5; i++) {
+                    try {
+                        HttpResponse<String> resp = client.send(req, new SimpleRespHlr());
+                        String body = resp.body();
+                        System.out.println(body);
+                        break;
+                    } catch (IOException e) {
+                        System.out.println(e.getMessage());
+                        System.out.println("retry ...");
+                        resetClientLogin();
+                    }
+                }
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -447,6 +477,7 @@ public class Rob {
     public String getEncrypt(LWTask task) throws Exception {
         logHandle.sendLog("loading enc ...");
         String url = XUE_GETEYPT;
+        System.out.println(task.encJson);
         HttpRequest req = genTextjsonPost(url, task.encJson)
                 .header("x-requested-with", "XMLHttpRequest")
                 .header("x-tingyun-id", "_hoVbWfXnGI;r=219510364")
@@ -501,16 +532,10 @@ public class Rob {
     }
 
     public static void main(String[] args) throws Exception {
-        Rob rob = new Rob("hcanrong", "Fuck4linewell");
+//        Rob rob = new Rob("hcanrong", "Fuck4linewell");
+        Rob rob = new Rob("林雪红", "Xuehong@521");
 
         rob.runStudy();
-//
-//        rob.login_lbsp();
-//        rob.singleLogin();
-//        rob.loginToXueTang();
-//
-//        rob.loadExamResult("f45ec2b1-de28-4494-9ed6-d27f385e1767");
-
     }
 
 }
